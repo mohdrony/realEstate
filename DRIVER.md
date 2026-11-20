@@ -1,4 +1,4 @@
-# Investment scout — driver playbook (v1, 2026-11-20)
+# Investment scout — driver playbook (v2, 2026-11-20)
 
 Rules for the scheduled task "Real estate investment scout" (Tue + Fri 20:23 Berlin). This repo is the ground
 truth: `METRIC.md` (rules), `workbook/Germany_Apartment_Shortlist.xlsx` (reference), `metric/realestate_metric.py`
@@ -12,7 +12,7 @@ financing applications or sign-ups with personal data ("emailing comes later"). 
 rental flat to live in (immowelt/Kleinanzeigen alerts, Brühl/Hürth) is not part of this.
 
 ## 1 · Each run
-1. `python tests/test_metric.py` must pass before and after any change.
+1. `python tests/test_metric.py` and `python tests/test_deal_v4.py` must pass before and after any change.
 2. **Re-check known leads** (`data/listings.csv`): still online? price changed? new rent/Hausgeld info in the ad?
    Update the row, note it in `research_note`, record status changes in `driver_state.json → lead_history`.
 3. **Search for new listings** (read-only; Claude in Chrome main profile, text reads; WebSearch/WebFetch fallback):
@@ -20,13 +20,23 @@ rental flat to live in (immowelt/Kleinanzeigen alerts, Brühl/Hürth) is not par
    (population trend ≥ 0 %, vacancy ≤ 5 %, or a dated local override), Sparkasse/Volksbank portals, ImmoScout24,
    immowelt, Kleinanzeigen, ohne-makler, ZVG forced-sale portal. Rotate markets so every run covers new ground;
    keep `driver_state.json → coverage` (market → last searched date). One unit on several portals = one lead.
+   **Unicorn hunting (v4, from 2026-11-20):** also search for flats likely to sell below value — renovation-needed
+   or dated interiors (renovierungsbedürftig, sanierungsbedürftig, Modernisierungsbedarf), inheritance sales
+   (Erbengemeinschaft, Nachlass), private sellers (provisionsfrei, ohne Makler), listings online for months or
+   with price cuts, poor energy class priced at a discount. Value-add leads are only worth keeping within about
+   75 minutes of Brühl (NRW first: Rhein-Erft, Köln, Bonn, Düsseldorf, Wuppertal, Ruhr, Aachen). Own-cash budget
+   ~€28k (v4) — asking prices up to ~€75k stay in scope.
 4. **Score** every new or changed row with `metric/realestate_metric.py data/listings.csv --assumptions
-   metric/driver_assumptions.json --json`. A listing without a verified cold rent is "Rent missing": record it,
+   metric/driver_assumptions.json --json` (v3) **and** `metric/deal_v4.py data/listings.csv --json` (v4). **Rank
+   by the v4 verdict** (Unicorn > Pass > Watch > Fail); v3 stays as the asking-price check. For flats that need
+   work or look underpriced, fill `market_value` (from 2–3 comparable sales or asking prices of renovated flats in
+   the same area, sources in `research_note`), `renovation_cost` (rough €/m² by scope), `rent_after` (local rent
+   for renovated flats) and `drive_min_from_bruehl`. Mark every such estimate as an estimate in `research_note`. A listing without a verified cold rent is "Rent missing": record it,
    and capture a rent estimate only in `research_note` (never in `cold_rent`).
 5. **Market mood** (Friday runs): current 10-year fixed mortgage rates (Interhyp, Dr. Klein, Bundesbank MFI
    statistics), ECB decisions, price indices (GREIX, vdp, Europace), rent/energy law (GEG, Mietpreisbremse,
    energy certificates), transfer-tax changes by state. Append to `driver_state.json → market_mood` with sources.
-6. **Opportunities**: price drop ≥ 8 %, forced sale with a date, rented below local rent with legal increase room,
+6. **Opportunities**: any v4 *Unicorn*; any *Watch* whose asking price drops to its `price_self_funding`; price drop ≥ 8 %, forced sale with a date, rented below local rent with legal increase room,
    lead that moves from Fail to Pass after a price change, negotiation target (price at which BRE-01/KAI-01-type
    leads would pass the budget). Write a short case into `driver_state.json → opportunities`.
 7. Update `METRIC.md` §8 results table and README status line; commit and push to `main`.

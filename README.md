@@ -10,6 +10,8 @@ Central repository for the Germany buy-to-let apartment search: the screening me
 | `workbook/Germany_Apartment_Shortlist.xlsx` | Main workbook: Shortlist, Models (all formulas), Rejected, Market evidence, Research steps, National screen (10,956 municipalities) |
 | `data/listings.csv` | Inputs for every scored listing (price, rent, fees, Hausgeld, source link, research note) |
 | `metric/realestate_metric.py` | Same metric in Python, for scoring new listings quickly |
+| `metric/deal_v4.py` | v4 deal screen: self-funding, discount / value-add, price targets, 30-yr flat vs ETF (`METRIC.md` §9) |
+| `data/examples_v4.csv` | Five teaching examples for the v4 screen (not listings) |
 | `tests/test_metric.py` | Checks the Python metric gives the same numbers as the workbook |
 | `DRIVER.md`, `data/driver_state.json`, `metric/driver_assumptions.json` | Scheduled scout: playbook, state, assumption overrides |
 | `simulator/index.html` | Interactive flat-vs-ETF simulator with sliders (open in a browser) |
@@ -21,6 +23,8 @@ Central repository for the Germany buy-to-let apartment search: the screening me
 python metric/realestate_metric.py data/listings.csv
 python metric/realestate_metric.py data/listings.csv --json
 python metric/realestate_metric.py data/listings.csv --assumptions my_assumptions.json
+python metric/deal_v4.py data/listings.csv          # v4 verdicts and price targets
+python tests/test_metric.py && python tests/test_deal_v4.py
 ```
 
 An assumptions file overrides any key in `DEFAULTS`, for example:

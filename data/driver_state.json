@@ -1,15 +1,63 @@
 {
- "meta": {"created": "2026-11-20", "playbook": "DRIVER.md"},
+ "meta": {
+  "created": "2026-11-20",
+  "playbook": "DRIVER.md"
+ },
  "coverage": {},
  "lead_history": [],
  "market_mood": [],
  "opportunities": [
-  {"date": "2026-11-20", "id": "KAI-01", "case": "Passes on yield (spread +0.6 %, +€23/mo after tax) but over budget at asking price; find the price at which total incl. reserve ≤ €70k and track the ad for drops.", "status": "watch"},
-  {"date": "2026-11-20", "id": "BRE-01", "case": "Over budget by ~€1.1k and spread −0.1 %; small price drop could flip budget, yield still marginal. Watch for drops.", "status": "watch"}
+  {
+   "date": "2026-11-20",
+   "id": "KAI-01",
+   "case": "Passes on yield (spread +0.6 %, +€23/mo after tax) but over budget at asking price; find the price at which total incl. reserve ≤ €70k and track the ad for drops.",
+   "status": "watch"
+  },
+  {
+   "date": "2026-11-20",
+   "id": "BRE-01",
+   "case": "Over budget by ~€1.1k and spread −0.1 %; small price drop could flip budget, yield still marginal. Watch for drops.",
+   "status": "watch"
+  },
+  {
+   "date": "2026-11-20",
+   "id": "SAA-01",
+   "case": "v4 Watch: self-funding at ≤ €47,710 (ask €50,000, −4.6%). Track for price cuts.",
+   "status": "watch"
+  },
+  {
+   "date": "2026-11-20",
+   "id": "LUN-01",
+   "case": "v4 Watch: self-funding at ≤ €53,491 (ask €59,000, −9.3%).",
+   "status": "watch"
+  },
+  {
+   "date": "2026-11-20",
+   "id": "BRE-01",
+   "case": "v4 Watch: self-funding at ≤ €56,173 (ask €59,500, −5.6%).",
+   "status": "watch"
+  },
+  {
+   "date": "2026-11-20",
+   "id": "KAI-01",
+   "case": "v4 Pass at asking price (own cash €23.4k ≤ €28k; +€23/mo after tax; beats ETF over 30 yrs). Open issues unchanged: 7.08% buyer commission, rent €17.50/m² vs ~€10.40 district.",
+   "status": "watch"
+  }
  ],
  "proposals": [],
  "blockers": [
-  {"date": "2026-11-20", "item": "Listing portals reachable read-only", "status": "OPEN", "retest": "open ImmoScout24, immowelt, Kleinanzeigen, ohne-makler, sparkasse.de exposé and ZVG search pages in Claude in Chrome (main profile) with get_page_text", "backfill": "first full re-check of data/listings.csv + first new-market scan"}
+  {
+   "date": "2026-11-20",
+   "item": "Listing portals reachable read-only",
+   "status": "OPEN",
+   "retest": "open ImmoScout24, immowelt, Kleinanzeigen, ohne-makler, sparkasse.de exposé and ZVG search pages in Claude in Chrome (main profile) with get_page_text",
+   "backfill": "first full re-check of data/listings.csv + first new-market scan"
+  }
  ],
- "log": []
+ "log": [
+  {
+   "date": "2026-11-20",
+   "entry": "Metric v4 deal screen added (metric/deal_v4.py, METRIC.md §9). Scout now ranks by v4 verdict and hunts for discounted / value-add flats within ~75 min of Brühl. Asked by Rony."
+  }
+ ]
 }

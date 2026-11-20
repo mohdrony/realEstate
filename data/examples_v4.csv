@@ -1,0 +1,6 @@
+id,location,price,area_m2,cold_rent,transfer_tax_rate,commission_rate,commission_fixed,hausgeld_total,owner_hausgeld_verified,market_value,renovation_cost,rent_after,drive_min_from_bruehl,rent_evidence,source_url,research_note
+EX-A,Example: typical listing at asking price,60000,,325,0.065,0,0,,,,,,,"Illustrative example, not a listing",,Teaching example from 2026-11-20 discussion
+EX-B,Example: self-funding at market price,60000,,400,0.065,0,0,,,,,,,"Illustrative example, not a listing",,Teaching example from 2026-11-20 discussion
+EX-C,Example: bought 20% below value,48000,,400,0.065,0,0,,,60000,,,,"Illustrative example, not a listing",,Teaching example from 2026-11-20 discussion
+EX-D,"Example: value-add, dated flat",45000,,330,0.065,0,0,,,70000,12000,450,45,"Illustrative example, not a listing",,Teaching example from 2026-11-20 discussion
+EX-E,Example: value-add too far away,45000,,330,0.065,0,0,,,70000,12000,450,150,"Illustrative example, not a listing",,Teaching example from 2026-11-20 discussion

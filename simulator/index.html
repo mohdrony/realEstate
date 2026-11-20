@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flat vs ETF simulator</title>
+<style>
+:root{--bg:#fff;--fg:#1d2329;--muted:#5d6670;--line:#e3e6ea;--panel:#f6f7f9;--accent:#2b6cb0;--accent2:#9aa4ae;--good:#2f855a;--bad:#c05621;--etf:#7a8591}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#15181c;--fg:#e8ebee;--muted:#9aa4ae;--line:#2c3238;--panel:#1d2126;--accent:#63a4e8;--accent2:#5d6670;--good:#5fbf8a;--bad:#e8935a;--etf:#9aa4ae}}
+:root[data-theme=dark]{--bg:#15181c;--fg:#e8ebee;--muted:#9aa4ae;--line:#2c3238;--panel:#1d2126;--accent:#63a4e8;--accent2:#5d6670;--good:#5fbf8a;--bad:#e8935a;--etf:#9aa4ae}
+:root{color-scheme:light dark}:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--fg)}
+header{padding:18px 20px 6px}
+h1{font-size:20px;margin:0 0 4px}
+.sub{color:var(--muted);margin:0}
+.wrap{display:grid;grid-template-columns:340px 1fr;gap:18px;padding:12px 20px 30px}
+@media (max-width:860px){.wrap{grid-template-columns:1fr}}
+.knobs{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;align-self:start}
+@media (min-width:861px){.knobs{position:sticky;top:10px;max-height:calc(100vh - 20px);overflow:auto}}
+details{border-bottom:1px solid var(--line);padding:6px 0}
+details:last-child{border-bottom:0}
+summary{cursor:pointer;font-weight:600;padding:4px 0;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";color:var(--muted)}
+details[open] summary::before{content:"▾ "}
+.k{margin:8px 0 10px}
+.k label{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.k label span.v{font-variant-numeric:tabular-nums;font-weight:600}
+.k .hint{font-size:11.5px;color:var(--muted);margin-top:1px}
+input[type=range]{width:100%;accent-color:var(--accent);margin:4px 0 0}
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
+.presets button{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:4px 10px;cursor:pointer}
+.presets button:hover{border-color:var(--accent)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.tile{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.tile .t{font-size:12px;color:var(--muted)}
+.tile .n{font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;margin-top:2px}
+.tile .s{font-size:12px;color:var(--muted)}
+.pos{color:var(--good)}.neg{color:var(--bad)}
+.verdict{border-left:4px solid var(--accent);background:var(--panel);padding:10px 14px;border-radius:6px;margin-bottom:16px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.card h2{font-size:15px;margin:0 0 2px}
+.card p.c{color:var(--muted);margin:0 0 6px;font-size:12.5px}
+svg{width:100%;height:auto;display:block}
+svg text{fill:var(--fg);font-size:11px}
+svg .mut{fill:var(--muted)}
+.grid line{stroke:var(--line)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
+.sw{display:inline-block;width:12px;height:3px;vertical-align:middle;margin-right:5px;border-radius:2px}
+footer{color:var(--muted);font-size:12px;padding:0 20px 24px}
+#bar{display:none}
+@media (max-width:860px){
+ #bar{display:block;position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 14px;font-size:13px;font-variant-numeric:tabular-nums}
+ header{padding:12px 14px 2px}.wrap{padding:10px 14px 24px}
+ svg text{font-size:19px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Flat vs ETF simulator</h1>
+  <p class="sub">Drag the knobs. The flat is bought with a loan, rented out, and sold at the end; the ETF gets the same starting cash. All results after tax.</p>
+</header>
+<div id="bar"></div>
+<div class="wrap">
+  <aside class="knobs" id="knobs">
+    <div class="presets" id="presets"></div>
+  </aside>
+  <main>
+    <div class="verdict" id="verdict"></div>
+    <div class="tiles" id="tiles"></div>
+    <div class="card">
+      <h2>When does it become passive income?</h2>
+      <p class="c">Cash left for you each month after rent, all costs, the full loan payment and tax. Bars above zero = the flat pays you; below = you pay in.</p>
+      <svg id="cashChart" viewBox="0 0 640 270" role="img" aria-label="Monthly cash by year"></svg>
+      <div class="legend"><span><i class="sw" style="background:var(--good)"></i>you receive</span><span><i class="sw" style="background:var(--bad)"></i>you pay in</span><span><i class="sw" style="background:var(--accent)"></i>your passive-income target</span></div>
+    </div>
+    <div class="card">
+      <h2>What you would have if you sold in each year</h2>
+      <p class="c">Flat: sale price minus selling costs minus the loan still owed, plus spare cash invested in the ETF. ETF: the same starting cash, after tax.</p>
+      <svg id="wealthChart" viewBox="0 0 640 270" role="img" aria-label="Wealth by year, flat vs ETF"></svg>
+      <div class="legend"><span><i class="sw" style="background:var(--accent)"></i>flat route</span><span><i class="sw" style="background:var(--etf)"></i>ETF route</span></div>
+    </div>
+    <div class="card">
+      <h2>How the down payment changes things</h2>
+      <p class="c">Every other knob as set. Bigger down payment = more monthly cash sooner, but each euro of yours grows less. Values at your horizon.</p>
+      <svg id="downChart" viewBox="0 0 640 270" role="img" aria-label="Down payment sweep"></svg>
+      <div class="legend"><span><i class="sw" style="background:var(--accent)"></i>flat: money back per €1 of your cash</span><span><i class="sw" style="background:var(--etf)"></i>ETF: per €1</span><span><i class="sw" style="background:var(--good)"></i>monthly cash in year 1 (right scale)</span></div>
+    </div>
+    <div class="card">
+      <h2>How rent yield decides everything</h2>
+      <p class="c">Every other knob as set; only the rent changes. Gross yield = yearly cold rent ÷ price. A pricier flat with the same yield scales everything up proportionally; a pricier flat usually has a lower yield, which moves you left on this chart.</p>
+      <svg id="yieldChart" viewBox="0 0 640 270" role="img" aria-label="Gross yield sweep"></svg>
+      <div class="legend"><span><i class="sw" style="background:var(--accent)"></i>flat wealth at horizon</span><span><i class="sw" style="background:var(--etf)"></i>ETF wealth (same cash)</span></div>
+    </div>
+  </main>
+</div>
+<footer>Model: annual steps. Loan is a fixed-payment annuity; after the fixed-rate period it is renewed at the new rate and paid off on the original date. Rent and running costs grow together. Flat surpluses and the reserve are invested in the same ETF; money you pay in is counted as ETF money you didn't invest. Sale after more than 10 years is tax-free for private owners. ETF gains taxed at 26.375% on 70% of the gain at the end. Not financial or tax advice. Source: github.com/mohdrony/realEstate</footer>
+
+<script>
+/* ---------- knob definitions ---------- */
+const GROUPS = [
+ ["The flat", [
+  ["size","Size","m²",15,150,1,40,"Living area."],
+  ["price_m2","Price per m²","€",500,6000,50,1500,"Cheap Ruhr cities ~€1,000–2,000; Cologne ~€4,000+."],
+  ["rent_m2","Cold rent per m²","€",4,25,0.1,10,"Rent for the space only, per month."],
+  ["transfer_tax","Property transfer tax","%",3.5,6.5,0.5,6.5,"NRW 6.5%, Bavaria 3.5%."],
+  ["notary","Notary + land register","%",1,3,0.1,2],
+  ["commission","Agent fee","%",0,7.14,0.01,0]]],
+ ["Loan", [
+  ["down","Down payment","%",0,100,5,20,"Share of the price you pay yourself. Purchase costs are always paid by you."],
+  ["interest","Interest rate","%",1,8,0.1,4.5],
+  ["repay","Starting repayment","%",1,6,0.5,2,"Higher = loan gone sooner, less monthly cash now."],
+  ["fixed_years","Fixed-rate period","years",5,30,1,10],
+  ["refi","Interest after fixed period","%",1,10,0.1,4.5],
+  ["extra_repay","Extra repayment per year","€",0,5000,100,0,"Special repayments (Sondertilgung)."]]],
+ ["Running costs", [
+  ["owner_hg_m2","Owner's Hausgeld per m²","€",0,5,0.1,2,"Part you can't pass to the tenant, per month."],
+  ["upkeep_m2","Upkeep per m²","€",0,2,0.025,0.625,"Your own small repairs, per month."],
+  ["mgmt","Letting management","€",0,60,5,0,"0 if you manage it yourself."],
+  ["loss","Rent loss allowance","%",0,15,1,5,"Empty months and late payers."],
+  ["reserve","Cash reserve","€",0,20000,100,2900,"Kept aside; invested in the ETF meanwhile."],
+  ["assess","One-off special bill","€",0,30000,500,0,"A big repair the owners' association bills you for."],
+  ["assess_year","…in year","",1,40,1,15]]],
+ ["Growth", [
+  ["rent_growth","Rent and cost growth","%/yr",0,4,0.25,2],
+  ["value_growth","Flat value growth","%/yr",-3,5,0.25,1]]],
+ ["Tax", [
+  ["tax","Your marginal tax rate","%",0,45,1,35],
+  ["building_share","Building share of cost","%",50,95,5,75,"Land isn't depreciated."],
+  ["afa","Depreciation rate","%/yr",2,3,0.5,2,"2% normal, 2.5% pre-1925, 3% new builds."]]],
+ ["Compare & goal", [
+  ["years","Horizon (sell after)","years",5,40,1,30],
+  ["sell_cost","Selling costs","%",0,10,0.5,6],
+  ["etf","ETF return","%/yr",0,10,0.25,7,"Before tax. ~7% is long-run world shares; not guaranteed."],
+  ["target","Passive-income target","€/mo",50,1000,25,200]]]
+];
+const PCT = new Set(["transfer_tax","notary","commission","down","interest","repay","refi","loss","rent_growth","value_growth","tax","building_share","afa","sell_cost","etf"]);
+const PRESETS = {
+ "Example: self-funding €60k": {},
+ "Typical cheap city (6.5%)": {rent_m2:8.1},
+ "Mid city (5%)": {price_m2:2500, rent_m2:10.4, reserve:4800},
+ "Expensive city (3.5%)": {price_m2:4500, rent_m2:13.1, reserve:8700},
+ "Cash purchase": {down:100},
+ "Zero down": {down:0}
+};
+const state = {};
+GROUPS.forEach(g=>g[1].forEach(k=>state[k[0]]=k[6]));
+
+/* ---------- model (mirrors simulator/model.py) ---------- */
+function run(s, horizonOverride){
+  const p = {}; for (const k in s) p[k] = PCT.has(k) ? s[k]/100 : s[k];
+  const years = horizonOverride || s.years;
+  const price = p.size*p.price_m2, rent0 = p.size*p.rent_m2*12;
+  const costs0 = (p.size*(p.owner_hg_m2+p.upkeep_m2)+p.mgmt)*12;
+  const acq = price*(1+p.transfer_tax+p.notary+p.commission);
+  const loan = price*(1-p.down), own = acq-loan+p.reserve;
+  const afa = acq*p.building_share*p.afa;
+  let bal = loan, i = p.interest, pay = loan*(p.interest+p.repay);
+  const term = (loan>0 && pay>loan*i) ? Math.log(pay/(pay-loan*i))/Math.log(1+i) : 99;
+  const T = 0.26375*0.7;
+  let side = p.reserve, basis = p.reserve; const rows = [];
+  for (let y=1; y<=Math.max(years,40); y++){
+    if (y===s.fixed_years+1 && bal>0){ i = p.refi; const n = Math.max(term-s.fixed_years,1); pay = i>0 ? bal*i/(1-Math.pow(1+i,-n)) : bal/n; }
+    const g = Math.pow(1+p.rent_growth,y-1);
+    const noi = rent0*g*(1-p.loss) - costs0*g;
+    const it = bal*i, pr = Math.min(Math.max(pay-it,0), bal);
+    const extra = bal-pr>0 ? Math.min(p.extra_repay, bal-pr) : 0;
+    bal -= pr+extra;
+    const tax = (noi-it-(y<=50?afa:0))*p.tax;
+    const cash = noi-it-pr-extra-tax-(y===s.assess_year?p.assess:0);
+    side = side*(1+p.etf)+cash; basis += cash;
+    const value = price*Math.pow(1+p.value_growth,y);
+    const sideAfter = side - Math.max(side-basis,0)*T;
+    const wealth = value*(1-p.sell_cost) - bal + sideAfter;
+    const ev = own*Math.pow(1+p.etf,y), etf = ev-(ev-own)*T;
+    rows.push({year:y, cash_m:cash/12, noi_m:noi/12, bal, value, wealth, etf});
+  }
+  const at = rows[years-1];
+  const firstAt = t => { const r = rows.find(r=>r.cash_m>=t); return r ? r.year : null; };
+  const payoff = loan<=0 ? 0 : (rows.find(r=>r.bal<=0.5)||{}).year || null;
+  return {price, rent_m:rent0/12, gross:rent0/price, acq, loan, own, rows, years,
+          wealth:at.wealth, etf:at.etf, cash_y1:rows[0].cash_m, net_yield:(rent0*(1-p.loss)-costs0)/acq,
+          firstPos:firstAt(0), firstTarget:firstAt(s.target), payoff};
+}
+
+/* ---------- formatting ---------- */
+const eur = v => (v<0?"−":"")+"€"+Math.round(Math.abs(v)).toLocaleString("en-US");
+const keur = v => (v<0?"−":"")+"€"+(Math.abs(v)>=100000?Math.round(Math.abs(v)/1000):(Math.abs(v)/1000).toFixed(1))+"k";
+const fmtKnob = (k,v) => { const u=k[2]; if(u==="€") return eur(v); if(u==="years"||u==="") return v+(u?" "+u:""); if(u==="€/mo") return eur(v)+"/mo"; if(u==="m²") return v+" m²"; const dec = k[5]<0.1?2:(k[5]<1?1:0); return v.toFixed(dec)+" "+u; };
+
+/* ---------- build knobs ---------- */
+const knobsEl = document.getElementById("knobs");
+const presetsEl = document.getElementById("presets");
+for (const name in PRESETS){ const b=document.createElement("button"); b.textContent=name; b.onclick=()=>applyPreset(PRESETS[name]); presetsEl.appendChild(b); }
+const inputs = {};
+GROUPS.forEach(([title,list],gi)=>{
+  const d=document.createElement("details"); if(gi<2) d.open=true;
+  d.innerHTML=`<summary>${title}</summary>`;
+  list.forEach(k=>{
+    const [key,label,unit,min,max,step,def,hint]=k;
+    const w=document.createElement("div"); w.className="k";
+    w.innerHTML=`<label for="k_${key}"><span>${label}</span><span class="v" id="v_${key}"></span></label><input type="range" id="k_${key}" min="${min}" max="${max}" step="${step}" value="${def}">${hint?`<div class="hint">${hint}</div>`:""}`;
+    d.appendChild(w);
+    const inp=w.querySelector("input"); inputs[key]={inp,k};
+    inp.addEventListener("input",()=>{state[key]=parseFloat(inp.value); update();});
+  });
+  knobsEl.appendChild(d);
+});
+function applyPreset(over){ GROUPS.forEach(g=>g[1].forEach(k=>state[k[0]]=k[6])); Object.assign(state,over); for(const key in inputs) inputs[key].inp.value=state[key]; update(); }
+
+/* ---------- small SVG helpers ---------- */
+const W=640,H=270,TOP=14,B=44; let L=56,R=74;
+function axes(svg, xmin,xmax,ymin,ymax, xlabel, ylabel, yfmt, xticks){
+  const X=v=>L+(v-xmin)/(xmax-xmin)*(W-L-R), Y=v=>TOP+(ymax-v)/(ymax-ymin)*(H-TOP-B);
+  let s='<g class="grid">'; const step=niceStep((ymax-ymin)/4);
+  for(let v=Math.ceil(ymin/step)*step; v<=ymax+1e-9; v+=step){ s+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}"/><text class="mut" x="${L-6}" y="${Y(v)+4}" text-anchor="end">${yfmt(v)}</text>`; }
+  s+='</g>';
+  (xticks||[]).forEach(v=>{ s+=`<text class="mut" x="${X(v)}" y="${H-B+16}" text-anchor="middle">${v}</text>`; });
+  s+=`<text class="mut" x="${W-R}" y="${H-4}" text-anchor="end">${xlabel}</text>`;
+  if(ymin<0&&ymax>0) s+=`<line x1="${L}" x2="${W-R}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--muted)"/>`;
+  return {X,Y,s};
+}
+function niceStep(x){ const p=Math.pow(10,Math.floor(Math.log10(Math.max(x,1e-9)))); const f=x/p; return (f<=1?1:f<=2?2:f<=5?5:10)*p; }
+function ticks(a,b,n){ const st=niceStep((b-a)/n); const t=[]; for(let v=Math.ceil(a/st)*st; v<=b; v+=st) t.push(+v.toFixed(6)); return t; }
+function line(pts,X,Y,color,w,dash){ return `<polyline fill="none" stroke="${color}" stroke-width="${w||2.2}" ${dash?`stroke-dasharray="${dash}"`:""} points="${pts.map(p=>X(p[0]).toFixed(1)+","+Y(p[1]).toFixed(1)).join(" ")}"/>`; }
+
+/* ---------- render ---------- */
+function update(){
+  const narrow = window.innerWidth<=860; L = narrow?84:56; R = narrow?118:74;
+  for(const key in inputs) document.getElementById("v_"+key).textContent=fmtKnob(inputs[key].k,state[key]);
+  const r = run(state);
+  const yrs = r.years;
+  // tiles
+  const tiles=[
+    ["Flat price", eur(r.price), `${state.size} m² · rent ${eur(r.rent_m)}/mo`],
+    ["Your cash needed", eur(r.own), `incl. ${eur(r.acq-r.price)} purchase costs + reserve`],
+    ["Loan", eur(r.loan), r.payoff===0?"none":(r.payoff?`paid off in year ${r.payoff}`:"not paid off in 40 yrs")],
+    ["Gross / net yield", (r.gross*100).toFixed(1)+"% / "+(r.net_yield*100).toFixed(1)+"%", "net = after running costs, on total cost"],
+    ["Monthly cash, year 1", `<span class="${r.cash_y1>=0?"pos":"neg"}">${eur(r.cash_y1)}</span>`, r.cash_y1>=0?"the flat pays for itself":"you pay in each month"],
+    ["Passive income ≥ "+eur(state.target)+"/mo", r.firstTarget?("year "+r.firstTarget):"not within 40 yrs", r.firstPos?("cash positive from year "+r.firstPos):"never cash positive"],
+    [`Wealth after ${yrs} yrs: flat`, keur(r.wealth), `×${(r.wealth/r.own).toFixed(2)} your cash`],
+    [`Wealth after ${yrs} yrs: ETF`, keur(r.etf), `×${(r.etf/r.own).toFixed(2)} your cash`]
+  ];
+  document.getElementById("tiles").innerHTML=tiles.map(t=>`<div class="tile"><div class="t">${t[0]}</div><div class="n">${t[1]}</div><div class="s">${t[2]}</div></div>`).join("");
+  const diff=r.wealth-r.etf;
+  document.getElementById("bar").innerHTML=`After ${yrs} yrs: <b style="color:var(--accent)">flat ${keur(r.wealth)}</b> vs <b>ETF ${keur(r.etf)}</b> · year-1 cash <b class="${r.cash_y1>=0?"pos":"neg"}">${eur(r.cash_y1)}/mo</b>${r.payoff>0?` · loan-free yr ${r.payoff}`:""}`;
+  const selfFund = r.cash_y1>=0;
+  document.getElementById("verdict").innerHTML =
+    `<b>${diff>=0?"The flat wins":"The ETF wins"} by ${keur(Math.abs(diff))} after ${yrs} years.</b> ` +
+    (selfFund ? `The flat pays for itself from year 1. ` : `You pay in ${eur(-r.cash_y1)} a month at first${r.firstPos?`; it turns positive in year ${r.firstPos}`:""}. `) +
+    (r.payoff>0 ? `The loan is gone in year ${r.payoff}; after that you keep about ${eur(r.rows[Math.min(r.payoff,39)].cash_m)} a month.` : r.payoff===0 ? `No loan: you keep about ${eur(r.cash_y1)} a month from the start.` : ``);
+
+  // cash chart (40 years always)
+  const rows=r.rows.slice(0,40); const cv=rows.map(x=>x.cash_m);
+  let ymin=Math.min(0,...cv,0), ymax=Math.max(state.target*1.1,...cv,10);
+  let a=axes(null,0.5,40.5,ymin,ymax,"year",null,v=>"€"+Math.round(v),[1,5,10,15,20,25,30,35,40]);
+  const bw=(W-L-R)/40*0.7;
+  let s=a.s+rows.map(x=>`<rect x="${a.X(x.year)-bw/2}" y="${Math.min(a.Y(x.cash_m),a.Y(0))}" width="${bw}" height="${Math.abs(a.Y(x.cash_m)-a.Y(0))}" fill="var(${x.cash_m>=0?"--good":"--bad"})" opacity="${x.year<=yrs?1:0.35}"><title>Year ${x.year}: ${eur(x.cash_m)} a month</title></rect>`).join("");
+  s+=`<line x1="${L}" x2="${W-R}" y1="${a.Y(state.target)}" y2="${a.Y(state.target)}" stroke="var(--accent)" stroke-dasharray="5 4"/><text x="${L+4}" y="${a.Y(state.target)-5}" style="fill:var(--accent)">target ${eur(state.target)}/mo</text>`;
+  if(r.payoff>0&&r.payoff<=40) s+=`<line x1="${a.X(r.payoff+0.5)}" x2="${a.X(r.payoff+0.5)}" y1="${TOP}" y2="${H-B}" stroke="var(--muted)" stroke-dasharray="2 3"/><text class="mut" x="${a.X(r.payoff+0.5)+4}" y="${TOP+10}">loan paid off</text>`;
+  if(yrs<40) s+=`<text class="mut" x="${a.X(yrs+0.5)+4}" y="${H-B-6}">after horizon →</text>`;
+  document.getElementById("cashChart").innerHTML=s;
+
+  // wealth chart up to horizon
+  const wr=r.rows.slice(0,yrs);
+  const wmax=Math.max(...wr.map(x=>Math.max(x.wealth,x.etf)))*1.08, wmin=Math.min(0,...wr.map(x=>x.wealth));
+  a=axes(null,0,yrs,wmin,wmax,"years held",null,v=>keur(v),ticks(0,yrs,6));
+  // year 0 = selling straight after buying: purchase costs and selling costs are lost
+  const fp=[[0, r.price*(1-state.sell_cost/100)-r.loan+state.reserve]].concat(wr.map(x=>[x.year,x.wealth]));
+  s=a.s+line([[0,r.own]].concat(wr.map(x=>[x.year,x.etf])),a.X,a.Y,"var(--etf)",2.2,"6 4")+line(fp,a.X,a.Y,"var(--accent)",2.6);
+  const last=wr[wr.length-1];
+  const up=last.wealth>=last.etf, gap=Math.abs(a.Y(last.wealth)-a.Y(last.etf))<14?7:0;
+  s+=`<text x="${a.X(yrs)+6}" y="${a.Y(last.wealth)+4+(up?-gap:gap)}" style="fill:var(--accent)">flat ${keur(last.wealth)}</text><text x="${a.X(yrs)+6}" y="${a.Y(last.etf)+4+(up?gap:-gap)}" class="mut">ETF ${keur(last.etf)}</text>`;
+  document.getElementById("wealthChart").innerHTML=s;
+
+  // down payment sweep
+  const dp=[]; for(let d=0; d<=100; d+=5){ const q=run(Object.assign({},state,{down:d})); dp.push({d, fm:q.wealth/q.own, em:q.etf/q.own, c:q.cash_y1}); }
+  const mmax=Math.max(...dp.map(x=>Math.max(x.fm,x.em)))*1.1, mmin=Math.min(0,...dp.map(x=>x.fm));
+  a=axes(null,0,100,mmin,mmax,"down payment %",null,v=>"×"+v.toFixed(1),[0,20,40,60,80,100]);
+  const cmin=Math.min(0,...dp.map(x=>x.c)), cmax=Math.max(...dp.map(x=>x.c),1);
+  const Yc=v=>TOP+(cmax-v)/(cmax-cmin)*(H-TOP-B);
+  s=a.s+line(dp.map(x=>[x.d,x.em]),a.X,a.Y,"var(--etf)",2.2,"6 4")+line(dp.map(x=>[x.d,x.fm]),a.X,a.Y,"var(--accent)",2.6)+line(dp.map(x=>[x.d,x.c]),a.X,Yc,"var(--good)",1.6,"2 3");
+  s+=`<text x="${W-R+6}" y="${Yc(cmax)+4}" style="fill:var(--good)">${eur(cmax)}/mo</text><text x="${W-R+6}" y="${Yc(0)+4}" style="fill:var(--good)">€0/mo</text>`;
+  s+=`<line x1="${a.X(state.down)}" x2="${a.X(state.down)}" y1="${TOP}" y2="${H-B}" stroke="var(--muted)" stroke-dasharray="2 3"/><text class="mut" x="${a.X(state.down)+4}" y="${TOP+10}">you</text>`;
+  s+=dp.map(x=>`<circle cx="${a.X(x.d)}" cy="${a.Y(x.fm)}" r="6" fill="transparent"><title>${x.d}% down: flat ×${x.fm.toFixed(2)}, ETF ×${x.em.toFixed(2)}, year-1 cash ${eur(x.c)}/mo</title></circle>`).join("");
+  document.getElementById("downChart").innerHTML=s;
+
+  // yield sweep
+  const ys=[]; for(let gy=2.5; gy<=10.01; gy+=0.25){ const rm2=state.price_m2*gy/100/12; const q=run(Object.assign({},state,{rent_m2:rm2})); ys.push({gy, w:q.wealth, e:q.etf, c:q.cash_y1}); }
+  const ymx=Math.max(...ys.map(x=>Math.max(x.w,x.e)))*1.08, ymn=Math.min(0,...ys.map(x=>x.w));
+  a=axes(null,2.5,10,ymn,ymx,"gross yield %",null,v=>keur(v),[3,4,5,6,7,8,9,10]);
+  s=a.s+line(ys.map(x=>[x.gy,x.e]),a.X,a.Y,"var(--etf)",2.2,"6 4")+line(ys.map(x=>[x.gy,x.w]),a.X,a.Y,"var(--accent)",2.6);
+  const ly=ys[ys.length-1]; s+=`<text x="${W-R+6}" y="${a.Y(ly.w)+4}" style="fill:var(--accent)">flat</text><text x="${W-R+6}" y="${a.Y(ly.e)+4}" class="mut">ETF</text>`;
+  const be=ys.find(x=>x.c>=0);
+  if(be) s+=`<line x1="${a.X(be.gy)}" x2="${a.X(be.gy)}" y1="${TOP}" y2="${H-B}" stroke="var(--good)" stroke-dasharray="3 3"/><text x="${a.X(be.gy)+4}" y="${H-B-8}" style="fill:var(--good)">self-funding from ${be.gy.toFixed(2)}%</text>`;
+  const cur=r.gross*100; if(cur>=2.5&&cur<=10) s+=`<circle cx="${a.X(cur)}" cy="${a.Y(r.wealth)}" r="5" fill="var(--accent)"/><text x="${a.X(cur)+8}" y="${a.Y(r.wealth)+16}" style="fill:var(--accent)">you (${cur.toFixed(1)}%)</text>`;
+  s+=ys.map(x=>`<circle cx="${a.X(x.gy)}" cy="${a.Y(x.w)}" r="6" fill="transparent"><title>${x.gy.toFixed(2)}% gross: flat ${keur(x.w)}, ETF ${keur(x.e)}, year-1 cash ${eur(x.c)}/mo</title></circle>`).join("");
+  document.getElementById("yieldChart").innerHTML=s;
+}
+applyPreset({});
+window.addEventListener("resize",update);
+if (typeof module !== "undefined") module.exports = {run};
+</script>
+</body>
+</html>

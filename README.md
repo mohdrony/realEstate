@@ -13,7 +13,8 @@ Central repository for the Germany buy-to-let apartment search: the screening me
 | `metric/deal_v4.py` | v4 deal screen: self-funding, discount / value-add, price targets, 30-yr flat vs ETF (`METRIC.md` §9) |
 | `data/examples_v4.csv` | Five teaching examples for the v4 screen (not listings) |
 | `tests/test_metric.py` | Checks the Python metric gives the same numbers as the workbook |
-| `DRIVER.md`, `data/driver_state.json`, `metric/driver_assumptions.json` | Scheduled scout: playbook, state, assumption overrides |
+| `DRIVER.md`, `data/driver_state.json`, `metric/driver_assumptions.json` | Scheduled scout: playbook (incl. channel radar §1b), state, assumption overrides |
+| `outreach/` | Templates Rony sends himself (property managers, agent search mandate, wanted ad, bank) + `tracker.csv` the scout reads |
 | `simulator/index.html` | Interactive flat-vs-ETF simulator with sliders (open in a browser) |
 | `simulator/model.py` | Same long-horizon model in Python; the page's JavaScript gives identical results |
 

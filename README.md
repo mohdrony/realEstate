@@ -11,6 +11,7 @@ Central repository for the Germany buy-to-let apartment search: the screening me
 | `data/listings.csv` | Inputs for every scored listing (price, rent, fees, Hausgeld, source link, research note) |
 | `metric/realestate_metric.py` | Same metric in Python, for scoring new listings quickly |
 | `tests/test_metric.py` | Checks the Python metric gives the same numbers as the workbook |
+| `DRIVER.md`, `data/driver_state.json`, `metric/driver_assumptions.json` | Scheduled scout: playbook, state, assumption overrides |
 
 ## Score listings
 
